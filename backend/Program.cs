@@ -266,7 +266,7 @@ app.MapGet("/api/groups", async (ClaimsPrincipal me, AppDb db) =>
 app.MapPost("/api/groups", async (GroupDto dto, AppDb db) =>
 {
     if (await ValidateGroup(dto, db, true) is { } err) return Bad(err);
-    var g = new Group { Name = V.Clean(dto.Name), Course = string.IsNullOrWhiteSpace(dto.Course) ? "Fullstack + AI" : V.Clean(dto.Course), Schedule = V.CleanOpt(dto.Schedule), CurrentMonth = dto.CurrentMonth ?? 1, StartDate = dto.StartDate, TeacherId = dto.TeacherId };
+    var g = new Group { Name = V.Clean(dto.Name), Course = string.IsNullOrWhiteSpace(dto.Course) ? "Fullstack + AI" : V.Clean(dto.Course), Schedule = V.CleanOpt(dto.Schedule), CurrentMonth = dto.CurrentMonth ?? 1, StartDate = UtcDate(dto.StartDate), TeacherId = dto.TeacherId };
     db.Groups.Add(g);
     await db.SaveChangesAsync();
     return Results.Ok(new { g.Id });
@@ -285,7 +285,7 @@ app.MapPut("/api/groups/{id:int}", async (int id, GroupDto dto, ClaimsPrincipal 
     {
         g.Name = V.Clean(dto.Name);
         if (!string.IsNullOrWhiteSpace(dto.Course)) g.Course = V.Clean(dto.Course);
-        g.StartDate = dto.StartDate;
+        g.StartDate = UtcDate(dto.StartDate);
         g.TeacherId = dto.TeacherId;
     }
     await db.SaveChangesAsync();
@@ -474,6 +474,8 @@ app.Run();
 
 // ---------- helpers ----------
 static IResult Bad(string error) => Results.BadRequest(new { error });
+// PostgreSQL (timestamptz) принимает только даты с Kind=Utc; дата из формы приходит без часового пояса
+static DateTime? UtcDate(DateTime? d) => d.HasValue ? DateTime.SpecifyKind(d.Value.Date, DateTimeKind.Utc) : null;
 static int UserId(ClaimsPrincipal p) => int.TryParse(p.FindFirst("sub")?.Value, out var id) ? id : 0;
 static bool IsAdmin(ClaimsPrincipal p) => p.IsInRole(Roles.Admin);
 static bool CanAccess(ClaimsPrincipal p, Group g) => IsAdmin(p) || g.TeacherId == UserId(p);
