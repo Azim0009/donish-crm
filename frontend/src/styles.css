@@ -398,3 +398,40 @@ th .sub { font-size: 10px; font-weight: 600; color: var(--muted); opacity: .8; t
 .fin-row select { width: auto; max-width: 100%; font-size: 13px; padding: 6px 8px; }
 .seg button:disabled { opacity: .45; cursor: not-allowed; }
 .seg button .ico { vertical-align: -1px; }
+
+/* ================= v4: удобные формы ================= */
+.page { animation: fadeIn .3s ease both; } /* без transform: не ломает position:fixed у окон */
+.backdrop { position: fixed; inset: 0; z-index: 100; display: flex; align-items: center; justify-content: center; padding: 24px 16px; background: rgba(5, 15, 11, .55); backdrop-filter: blur(3px); overflow-y: auto; }
+.modal { width: min(560px, 100%); max-height: calc(100vh - 48px); padding: 0; gap: 0; display: flex; flex-direction: column; overflow: hidden; border-radius: 16px; }
+.modal.wide { width: min(680px, 100%); }
+.modal-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; padding: 20px 22px 14px; border-bottom: 1px solid var(--line); }
+.modal-head h2 { font-size: 20px; }
+.modal-head .close { color: var(--muted); flex-shrink: 0; }
+.modal-body { padding: 18px 22px; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; }
+.modal-foot { display: flex; justify-content: flex-end; gap: 10px; padding: 14px 22px; margin: 0; border-top: 1px solid var(--line); background: var(--surface-2); }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px 14px; }
+@media (max-width: 560px) { .form-grid { grid-template-columns: 1fr; } .modal-head, .modal-body, .modal-foot { padding-left: 16px; padding-right: 16px; } }
+
+label.field, div.field { display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 600; color: var(--ink); min-width: 0; }
+.f-label { display: inline-flex; gap: 3px; }
+.req { color: var(--fail); font-style: normal; }
+.f-hint { font-size: 12px; font-weight: 400; color: var(--muted); }
+.f-hint b { color: var(--ink); font-weight: 600; }
+input, select { height: 44px; padding: 0 12px; transition: border-color .15s, box-shadow .15s; }
+input:hover, select:hover { border-color: color-mix(in srgb, var(--muted) 60%, var(--line)); }
+input:focus, select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+input[type="date"], input[type="time"] { font-family: var(--mono); font-size: 14px; }
+input.score { height: 34px; }
+.select-wrap { position: relative; }
+.select-wrap select { appearance: none; -webkit-appearance: none; padding-right: 38px; cursor: pointer; }
+.sel-chev { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
+.filters select { height: 44px; }
+
+.days { display: flex; flex-wrap: wrap; gap: 6px; }
+.day { min-width: 46px; height: 38px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); font: 600 13px var(--font); cursor: pointer; transition: background-color .15s, border-color .15s, color .15s, transform .1s; }
+.day:hover { border-color: var(--accent); }
+.day:active { transform: scale(.94); }
+.day.on { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.time-row { display: flex; gap: 10px; flex-wrap: wrap; }
+.time { display: flex; align-items: center; gap: 8px; font-weight: 500; color: var(--muted); }
+.time input { width: 130px; }

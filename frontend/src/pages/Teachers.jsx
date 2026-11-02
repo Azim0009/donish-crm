@@ -64,9 +64,9 @@ export default function Teachers() {
         <Modal title={edit.id ? "Учитель" : "Новый учитель"} onClose={() => setEdit(null)} onSubmit={save} error={error} busy={busy}>
           <div className="form-grid">
             <Field full label="Имя и фамилия" id="t-name" value={edit.fullName} onChange={set("fullName")} required maxLength={100} />
-            <Field label="Логин" id="t-login" value={edit.login} onChange={set("login")} required autoComplete="off" maxLength={32} placeholder="латиница, напр. azim" />
-            <Field label={edit.id ? "Новый пароль (если меняем)" : "Пароль"} id="t-pass" type="password" value={edit.password} onChange={set("password")} required={!edit.id} autoComplete="new-password" maxLength={128} placeholder="минимум 8: буквы и цифры" />
-            <Field full label="Телефон / WhatsApp" id="t-phone" type="tel" value={edit.phone} onChange={set("phone")} placeholder="+992 90 123 45 67" maxLength={20} />
+            <Field label="Логин" id="t-login" value={edit.login} onChange={set("login")} required autoComplete="off" maxLength={32} placeholder="например: azim" hint="Латиница, цифры, точка" />
+            <Field label={edit.id ? "Новый пароль (если меняем)" : "Пароль"} id="t-pass" type="password" value={edit.password} onChange={set("password")} required={!edit.id} autoComplete="new-password" maxLength={128} placeholder="••••••••" hint="Минимум 8 символов: буквы и цифры" />
+            <Field full label="Телефон / WhatsApp" id="t-phone" type="tel" value={edit.phone} onChange={set("phone")} placeholder="+992 90 123 45 67" maxLength={20} hint="Необязательно" />
           </div>
         </Modal>
       )}

@@ -365,7 +365,7 @@ function Students({ group, groups, students, isAdmin, reload }) {
             <Field full label="Имя и фамилия" id="s-name" value={edit.fullName} onChange={set("fullName")} required maxLength={100} />
             <Field label="Телефон ученика" id="s-phone" type="tel" maxLength={20} value={edit.phone} onChange={set("phone")} placeholder="+992 90 123 45 67" />
             <Field label="Имя родителя" id="s-parent" maxLength={100} value={edit.parentName} onChange={set("parentName")} />
-            <Field full label="WhatsApp родителя" id="s-wa" type="tel" maxLength={20} value={edit.parentPhone} onChange={set("parentPhone")} placeholder="+992 93 765 43 21" />
+            <Field full label="WhatsApp родителя" id="s-wa" type="tel" maxLength={20} value={edit.parentPhone} onChange={set("parentPhone")} placeholder="+992 93 765 43 21" hint="Сюда учитель отправляет недельный отчёт" />
             {isAdmin && edit.id && (
               <Field as="select" full label="Группа (перевод, например, на повтор месяца)" id="s-group" value={edit.groupId} onChange={set("groupId")}>
                 {groups.map((g) => <option key={g.id} value={g.id}>{g.name} · месяц {g.currentMonth}</option>)}

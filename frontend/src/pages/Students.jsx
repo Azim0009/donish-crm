@@ -123,7 +123,7 @@ export default function Students() {
             <Field full label="Имя и фамилия" id="ns-name" value={edit.fullName} onChange={set("fullName")} required maxLength={100} />
             <Field label="Телефон ученика" id="ns-phone" type="tel" maxLength={20} value={edit.phone} onChange={set("phone")} placeholder="+992 90 123 45 67" />
             <Field label="Имя родителя" id="ns-parent" maxLength={100} value={edit.parentName} onChange={set("parentName")} />
-            <Field label="WhatsApp родителя" id="ns-wa" type="tel" maxLength={20} value={edit.parentPhone} onChange={set("parentPhone")} placeholder="+992 93 765 43 21" />
+            <Field label="WhatsApp родителя" id="ns-wa" type="tel" maxLength={20} value={edit.parentPhone} onChange={set("parentPhone")} placeholder="+992 93 765 43 21" hint="Сюда учитель отправляет недельный отчёт" />
             <Field as="select" label="Группа" id="ns-group" value={edit.groupId} onChange={set("groupId")} disabled={!!edit.id && !isAdmin}>
               {groups.map((g) => <option key={g.id} value={g.id}>{g.name} · месяц {g.currentMonth}</option>)}
             </Field>

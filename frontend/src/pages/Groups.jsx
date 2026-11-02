@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { api, auth } from "../api.js";
-import Modal, { Field } from "../components/Modal.jsx";
+import Modal, { Field, ScheduleInput } from "../components/Modal.jsx";
 import { v, first } from "../validate.js";
 
 const blank = { name: "", course: "Fullstack + AI", schedule: "", currentMonth: 1, startDate: "", teacherId: "" };
@@ -75,23 +75,25 @@ export default function Groups() {
       </div>
 
       {edit && (
-        <Modal title={edit.id ? "Группа" : "Новая группа"} onClose={() => setEdit(null)} onSubmit={save} error={error} busy={busy}>
+        <Modal title={edit.id ? "Настройки группы" : "Новая группа"}
+          subtitle={isAdmin ? "Название, учитель и расписание. Поля со * обязательны." : "Вы можете изменить расписание и текущий месяц."}
+          onClose={() => setEdit(null)} onSubmit={save} error={error} busy={busy} submitText={edit.id ? "Сохранить" : "Создать группу"} wide>
           <div className="form-grid">
-            {isAdmin && <Field full label="Название группы" id="g-name" value={edit.name} onChange={set("name")} placeholder="Например: FS-01 после обеда" required maxLength={60} />}
-            {isAdmin && <Field label="Курс" id="g-course" value={edit.course} onChange={set("course")} maxLength={60} />}
+            {isAdmin && <Field full required label="Название группы" id="g-name" value={edit.name} onChange={set("name")} placeholder="Например: FS-01 после обеда" maxLength={60} hint="Как группу будут видеть учителя и в отчётах" />}
             {isAdmin && (
-              <Field as="select" label="Учитель" id="g-teacher" value={edit.teacherId} onChange={set("teacherId")}>
-                <option value="">— не назначен —</option>
+              <Field as="select" label="Учитель" id="g-teacher" value={edit.teacherId} onChange={set("teacherId")} hint={teachers.length ? "Можно назначить позже" : "Сначала создайте учителя во вкладке «Учителя»"}>
+                <option value="">Не назначен</option>
                 {teachers.map((t) => <option key={t.id} value={t.id}>{t.fullName}</option>)}
               </Field>
             )}
-            <Field full label="Дни и время занятий" id="g-schedule" value={edit.schedule} onChange={set("schedule")} placeholder="Пн, Ср, Пт · 14:00–16:00" maxLength={100} />
-            <Field as="select" label="Текущий месяц" id="g-month" value={edit.currentMonth} onChange={set("currentMonth")}>
+            {isAdmin && <Field label="Курс" id="g-course" value={edit.course} onChange={set("course")} maxLength={60} placeholder="Fullstack + AI" />}
+            <ScheduleInput value={edit.schedule} onChange={(val) => setEdit({ ...edit, schedule: val })} />
+            <Field as="select" label="Текущий месяц" id="g-month" value={edit.currentMonth} onChange={set("currentMonth")} hint="Обычно меняется кнопкой «Завершить месяц»">
               <option value={1}>Месяц 1 · Frontend</option>
               <option value={2}>Месяц 2 · Backend</option>
               <option value={3}>Месяц 3 · Проект</option>
             </Field>
-            {isAdmin && <Field label="Дата старта" id="g-start" type="date" value={edit.startDate} onChange={set("startDate")} />}
+            {isAdmin && <Field label="Дата старта" id="g-start" type="date" value={edit.startDate} onChange={set("startDate")} hint="Первый урок группы" />}
           </div>
         </Modal>
       )}
