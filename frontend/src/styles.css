@@ -435,3 +435,11 @@ input.score { height: 34px; }
 .time-row { display: flex; gap: 10px; flex-wrap: wrap; }
 .time { display: flex; align-items: center; gap: 8px; font-weight: 500; color: var(--muted); }
 .time input { width: 130px; }
+
+/* ================= v5: финансы ================= */
+th.r, td.r { text-align: right; white-space: nowrap; }
+.note-box { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-radius: 10px; background: var(--extra-bg); color: var(--extra); font-size: 14px; font-weight: 500; margin-bottom: 16px; }
+.static-val { height: 44px; display: flex; align-items: center; padding: 0 12px; border-radius: 10px; background: var(--surface-2); border: 1px solid var(--line); font-weight: 600; font-size: 15px; }
+.seg.big { display: flex; width: 100%; }
+.seg.big button { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 38px; font-size: 14px; }
+.stats .stat b { font-size: 22px; }

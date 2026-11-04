@@ -31,6 +31,7 @@ export default function Layout({ children }) {
           <NavLink to="/groups"><Icon name="grid" /> Группы</NavLink>
           <NavLink to="/students"><Icon name="users" /> Ученики</NavLink>
           {u?.role === "admin" && <NavLink to="/teachers"><Icon name="user" /> Учителя</NavLink>}
+          {u?.role === "admin" && <NavLink to="/finance"><Icon name="wallet" /> Финансы</NavLink>}
         </nav>
         <div className="side-foot">
           <div className="me"><b>{u?.fullName}</b>{u?.role === "admin" ? "Суперадмин" : "Учитель"}</div>

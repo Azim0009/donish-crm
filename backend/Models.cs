@@ -78,6 +78,30 @@ public class ExtraExam
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 }
 
+// Оплата за месяц курса
+public class Payment
+{
+    public int Id { get; set; }
+    public int StudentId { get; set; }
+    public string StudentName { get; set; } = "";   // копия имени — история сохраняется, даже если ученика удалят
+    public int? GroupId { get; set; }
+    public string GroupName { get; set; } = "";
+    public int Month { get; set; }                   // месяц курса 1..3
+    public decimal Amount { get; set; }              // сомони
+    public string Method { get; set; } = "cash";     // cash — наличные, transfer — перевод
+    public DateTime PaidAt { get; set; }             // дата оплаты (UTC)
+    public string? Note { get; set; }
+    public int? CreatedById { get; set; }
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+}
+
+// Простые настройки ключ-значение (например, цена месяца)
+public class AppSetting
+{
+    public string Key { get; set; } = "";
+    public string Value { get; set; } = "";
+}
+
 public class AppDb : DbContext
 {
     public AppDb(DbContextOptions<AppDb> o) : base(o) { }
@@ -86,10 +110,16 @@ public class AppDb : DbContext
     public DbSet<Student> Students => Set<Student>();
     public DbSet<WeekScore> WeekScores => Set<WeekScore>();
     public DbSet<ExtraExam> ExtraExams => Set<ExtraExam>();
+    public DbSet<Payment> Payments => Set<Payment>();
+    public DbSet<AppSetting> Settings => Set<AppSetting>();
 
     protected override void OnModelCreating(ModelBuilder b)
     {
         b.Entity<User>().HasIndex(x => x.Login).IsUnique();
+        b.Entity<Payment>().ToTable("Payments");
+        b.Entity<Payment>().Property(x => x.Amount).HasPrecision(12, 2);
+        b.Entity<Payment>().HasIndex(x => new { x.StudentId, x.Month });
+        b.Entity<AppSetting>().ToTable("AppSettings").HasKey(x => x.Key);
         b.Entity<User>().Property(x => x.Login).HasMaxLength(32);
         b.Entity<User>().Property(x => x.FullName).HasMaxLength(100);
         b.Entity<User>().Property(x => x.SecurityStamp).HasMaxLength(64);
