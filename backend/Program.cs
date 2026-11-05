@@ -456,6 +456,62 @@ app.MapGet("/api/overview", async (AppDb db) =>
     return Results.Ok(new { groups, students, scores, teachers = teacherCount });
 }).RequireAuthorization("admin");
 
+// ================= BACKUP для Google Таблицы (только чтение) =================
+// Включается переменной BACKUP_KEY на Render. Без неё адрес не работает (404).
+// Google Apps Script присылает ключ в заголовке X-Backup-Key. Пароли и служебные поля не отдаются.
+app.MapGet("/api/backup", async (HttpRequest req, AppDb db) =>
+{
+    var key = Environment.GetEnvironmentVariable("BACKUP_KEY");
+    if (string.IsNullOrWhiteSpace(key) || key.Length < 24) return Results.NotFound();
+    var sent = req.Headers["X-Backup-Key"].ToString();
+    if (!System.Security.Cryptography.CryptographicOperations.FixedTimeEquals(Encoding.UTF8.GetBytes(sent), Encoding.UTF8.GetBytes(key)))
+        return Results.Unauthorized();
+
+    var users = await db.Users.AsNoTracking().ToListAsync();
+    var groups = await db.Groups.AsNoTracking().ToListAsync();
+    var students = await db.Students.AsNoTracking().ToListAsync();
+    var weeks = await db.WeekScores.AsNoTracking().ToListAsync();
+    var extra = await db.ExtraExams.AsNoTracking().ToListAsync();
+    var payments = await db.Payments.AsNoTracking().ToListAsync();
+    var userName = users.ToDictionary(u => u.Id, u => u.FullName);
+    var groupById = groups.ToDictionary(g => g.Id);
+    var studentById = students.ToDictionary(s => s.Id);
+    string GroupName(int? id) => id.HasValue && groupById.TryGetValue(id.Value, out var g) ? g.Name : "";
+    string StudentName(int id) => studentById.TryGetValue(id, out var s) ? s.FullName : "(удалён)";
+    int? StudentGroup(int id) => studentById.TryGetValue(id, out var s) ? s.GroupId : null;
+    int n(int? v) => v ?? 0;
+
+    return Results.Ok(new
+    {
+        createdAt = DateTime.UtcNow,
+        teachers = users.Where(u => u.Role == Roles.Teacher).OrderBy(u => u.FullName)
+            .Select(u => new { u.Id, u.FullName, u.Login, u.Phone, u.CreatedAt }),
+        groups = groups.OrderBy(g => g.Name).Select(g => new
+        {
+            g.Id, g.Name, g.Course, g.Schedule, g.CurrentMonth, g.StartDate,
+            teacher = g.TeacherId.HasValue && userName.TryGetValue(g.TeacherId.Value, out var t) ? t : "",
+            students = students.Count(s => s.GroupId == g.Id),
+        }),
+        students = students.OrderBy(s => GroupName(s.GroupId)).ThenBy(s => s.FullName).Select(s => new
+        {
+            s.Id, s.FullName, s.Phone, s.ParentName, s.ParentPhone, group = GroupName(s.GroupId), s.GroupId, s.CreatedAt,
+        }),
+        scores = weeks.OrderBy(w => GroupName(StudentGroup(w.StudentId))).ThenBy(w => StudentName(w.StudentId)).ThenBy(w => w.Month).ThenBy(w => w.Week).Select(w => new
+        {
+            student = StudentName(w.StudentId), group = GroupName(StudentGroup(w.StudentId)), w.StudentId, w.Month, w.Week,
+            w.A1, w.A2, w.A3, w.H1, w.H2, w.H3, w.Bonus, w.Exam,
+            total = Math.Min(100, n(w.A1) + n(w.A2) + n(w.A3) + n(w.H1) + n(w.H2) + n(w.H3) + n(w.Bonus) + n(w.Exam)),
+            w.UpdatedAt,
+        }),
+        extraExams = extra.Select(e => new { student = StudentName(e.StudentId), e.StudentId, e.Month, passed = e.Passed ? "Сдал" : "Не сдал", e.UpdatedAt }),
+        payments = payments.OrderByDescending(p => p.PaidAt).ThenByDescending(p => p.Id).Select(p => new
+        {
+            p.Id, p.PaidAt, p.StudentName, p.StudentId, p.GroupName, p.Month, p.Amount,
+            method = p.Method == "cash" ? "Наличные" : "Перевод", p.Note, p.CreatedAt,
+        }),
+    });
+});
+
 // ================= FINANCE (только суперадмин) =================
 var fin = app.MapGroup("/api/finance").RequireAuthorization("admin");
 
