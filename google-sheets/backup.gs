@@ -20,6 +20,7 @@ const SHEETS = {
   'Ученики': ['students', [['ID', 'id'], ['Ученик', 'fullName'], ['Группа', 'group'], ['Телефон', 'phone'], ['Родитель', 'parentName'], ['WhatsApp родителя', 'parentPhone'], ['Добавлен', 'createdAt', 'date']]],
   'Оплаты': ['payments', [['Дата оплаты', 'paidAt', 'date'], ['Ученик', 'studentName'], ['Группа', 'groupName'], ['Месяц курса', 'month'], ['Сумма, сом.', 'amount', 'money'], ['Способ', 'method'], ['Комментарий', 'note'], ['ID оплаты', 'id'], ['ID ученика', 'studentId'], ['Записано', 'createdAt', 'datetime']]],
   'Баллы': ['scores', [['Ученик', 'student'], ['Группа', 'group'], ['Месяц', 'month'], ['Неделя', 'week'], ['Пос. 1', 'a1'], ['Пос. 2', 'a2'], ['Пос. 3', 'a3'], ['ДЗ 1', 'h1'], ['ДЗ 2', 'h2'], ['ДЗ 3', 'h3'], ['Бонус', 'bonus'], ['Экзамен', 'exam'], ['Итого /100', 'total'], ['ID ученика', 'studentId'], ['Обновлено', 'updatedAt', 'datetime']]],
+  'Расходы': ['expenses', [['Дата', 'spentAt', 'date'], ['Категория', 'category'], ['Сумма, сом.', 'amount', 'money'], ['Способ', 'method'], ['Учитель', 'teacher'], ['Комментарий', 'note'], ['ID расхода', 'id'], ['Записано', 'createdAt', 'datetime']]],
   'Доп. экзамены': ['extraExams', [['Ученик', 'student'], ['Месяц', 'month'], ['Результат', 'passed'], ['ID ученика', 'studentId'], ['Обновлено', 'updatedAt', 'datetime']]],
   'Группы': ['groups', [['ID', 'id'], ['Группа', 'name'], ['Курс', 'course'], ['Учитель', 'teacher'], ['Расписание', 'schedule'], ['Текущий месяц', 'currentMonth'], ['Учеников', 'students'], ['Дата старта', 'startDate', 'date']]],
   'Учителя': ['teachers', [['ID', 'id'], ['Учитель', 'fullName'], ['Логин', 'login'], ['Телефон', 'phone'], ['Добавлен', 'createdAt', 'date']]],
@@ -115,6 +116,7 @@ function log_(ss, status, data) {
     sh.setFrozenRows(1);
   }
   sh.insertRowAfter(1);
+  sh.getRange(2, 1, 1, 7).setFontWeight('normal').setBackground(null).setFontColor('#000000');
   sh.getRange(2, 1, 1, 7).setValues([[new Date(), status, (data.students || []).length, (data.groups || []).length,
     (data.teachers || []).length, (data.payments || []).length, (data.scores || []).length]]);
   sh.getRange(2, 1).setNumberFormat('dd.mm.yyyy hh:mm');

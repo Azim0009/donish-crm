@@ -95,6 +95,21 @@ public class Payment
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 }
 
+// Расход академии (аренда, зарплата, налоги и т.д.)
+public class Expense
+{
+    public int Id { get; set; }
+    public string Category { get; set; } = "";       // ключ категории, см. Program.cs ExpenseCategories
+    public decimal Amount { get; set; }              // сомони
+    public string Method { get; set; } = "cash";     // cash — наличные, transfer — перевод
+    public DateTime SpentAt { get; set; }            // дата расхода (UTC)
+    public int? TeacherId { get; set; }              // для зарплаты и бонуса учителю (необязательно)
+    public string TeacherName { get; set; } = "";    // копия имени — история сохраняется, даже если учителя удалят
+    public string? Note { get; set; }
+    public int? CreatedById { get; set; }
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+}
+
 // Простые настройки ключ-значение (например, цена месяца)
 public class AppSetting
 {
@@ -112,6 +127,7 @@ public class AppDb : DbContext
     public DbSet<ExtraExam> ExtraExams => Set<ExtraExam>();
     public DbSet<Payment> Payments => Set<Payment>();
     public DbSet<AppSetting> Settings => Set<AppSetting>();
+    public DbSet<Expense> Expenses => Set<Expense>();
 
     protected override void OnModelCreating(ModelBuilder b)
     {
@@ -120,6 +136,9 @@ public class AppDb : DbContext
         b.Entity<Payment>().Property(x => x.Amount).HasPrecision(12, 2);
         b.Entity<Payment>().HasIndex(x => new { x.StudentId, x.Month });
         b.Entity<AppSetting>().ToTable("AppSettings").HasKey(x => x.Key);
+        b.Entity<Expense>().ToTable("Expenses");
+        b.Entity<Expense>().Property(x => x.Amount).HasPrecision(12, 2);
+        b.Entity<Expense>().HasIndex(x => x.SpentAt);
         b.Entity<User>().Property(x => x.Login).HasMaxLength(32);
         b.Entity<User>().Property(x => x.FullName).HasMaxLength(100);
         b.Entity<User>().Property(x => x.SecurityStamp).HasMaxLength(64);
