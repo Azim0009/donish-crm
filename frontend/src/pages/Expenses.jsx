@@ -34,6 +34,7 @@ export default function Expenses() {
   const [teachers, setTeachers] = useState([]);
   const [month, setMonth] = useState(() => ym(new Date().toISOString()));
   const [cf, setCf] = useState("");
+  const [tab, setTab] = useState("list");
   const [edit, setEdit] = useState(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -54,6 +55,30 @@ export default function Expenses() {
   const income = payments.filter((p) => ym(p.paidAt) === month).reduce((t, p) => t + Number(p.amount), 0);
   const spent = inMonth.reduce((t, e) => t + Number(e.amount), 0);
   const profit = income - spent;
+  // Остаток: все приходы (оплаты учеников) минус все расходы, за всё время
+  const sumBy = (arr, m) => arr.filter((x) => !m || x.method === m).reduce((t, x) => t + Number(x.amount), 0);
+  const balance = sumBy(payments) - sumBy(expenses);
+  const cashBal = sumBy(payments, "cash") - sumBy(expenses, "cash");
+  const transferBal = sumBy(payments, "transfer") - sumBy(expenses, "transfer");
+  // Касса: все операции по дате с остатком после каждой
+  let run = 0;
+  const ledger = [
+    ...payments.map((p) => ({ key: "p" + p.id, date: p.paidAt, created: p.createdAt || "", in: true, amount: Number(p.amount), method: p.method,
+      title: `Оплата: ${p.studentName}`, sub: [p.groupName, p.month ? `месяц курса ${p.month}` : "", p.note].filter(Boolean).join(" · ") })),
+    ...expenses.map((e) => ({ key: "e" + e.id, date: e.spentAt, created: e.createdAt || "", in: false, amount: Number(e.amount), method: e.method,
+      title: `Расход: ${CAT[e.category] || e.category}`, sub: [e.teacherName, e.note].filter(Boolean).join(" · ") })),
+  ].sort((a, b) => a.date.slice(0, 10).localeCompare(b.date.slice(0, 10)) || String(a.created).localeCompare(String(b.created)) || (a.in === b.in ? 0 : a.in ? -1 : 1))
+    .map((x) => { run += x.in ? x.amount : -x.amount; return { ...x, after: run }; });
+  const ledgerMonth = ledger.filter((x) => ym(x.date) === month);
+  const opening = ledger.filter((x) => ym(x.date) < month).reduce((t, x) => t + (x.in ? x.amount : -x.amount), 0);
+  // Отчёт по месяцам
+  const report = [...new Set(ledger.map((x) => ym(x.date)))].sort().map((m) => {
+    const rows = ledger.filter((x) => ym(x.date) === m);
+    const inc = rows.filter((x) => x.in).reduce((t, x) => t + x.amount, 0);
+    const out = rows.filter((x) => !x.in).reduce((t, x) => t + x.amount, 0);
+    return { m, inc, out, profit: inc - out, end: rows[rows.length - 1].after };
+  }).reverse();
+  const sign = (n) => (n < 0 ? "−" : "") + money(Math.abs(n));
   const byCat = EXPENSE_CATEGORIES.map(([k, name]) => [k, name, inMonth.filter((e) => e.category === k).reduce((t, e) => t + Number(e.amount), 0)])
     .filter((x) => x[2] > 0).sort((a, b) => b[2] - a[2]);
 
@@ -103,8 +128,63 @@ export default function Expenses() {
       <div className="stats">
         <div className="card stat"><Icon name="wallet" size={20} className="stat-ico" /><b style={{ color: "var(--pass)" }}>{money(income)}</b><span>доходы · {monthLabel(month)}</span></div>
         <div className="card stat"><Icon name="cash" size={20} className="stat-ico" /><b style={{ color: "var(--fail)" }}>{money(spent)}</b><span>расходы · {inMonth.length} шт.</span></div>
-        <div className="card stat"><Icon name="chart" size={20} className="stat-ico" /><b style={{ color: profit >= 0 ? "var(--pass)" : "var(--fail)" }}>{profit < 0 ? "−" : ""}{money(Math.abs(profit))}</b><span>{profit >= 0 ? "прибыль" : "убыток"} (доходы − расходы)</span></div>
+        <div className="card stat"><Icon name="chart" size={20} className="stat-ico" /><b style={{ color: profit >= 0 ? "var(--pass)" : "var(--fail)" }}>{sign(profit)}</b><span>{profit >= 0 ? "прибыль" : "убыток"} за месяц</span></div>
+        <div className="card stat"><Icon name="wallet" size={20} className="stat-ico" /><b style={{ color: balance >= 0 ? "var(--ink)" : "var(--fail)" }}>{sign(balance)}</b><span>остаток в кассе (всего) · наличные {sign(cashBal)} · перевод {sign(transferBal)}</span></div>
       </div>
+
+      <div className="tabs">
+        <button className={tab === "list" ? "on" : ""} onClick={() => setTab("list")}>Расходы · <span className="num">{inMonth.length}</span></button>
+        <button className={tab === "cash" ? "on" : ""} onClick={() => setTab("cash")}>Касса (приход и расход) · <span className="num">{ledgerMonth.length}</span></button>
+        <button className={tab === "report" ? "on" : ""} onClick={() => setTab("report")}>Отчёт по месяцам</button>
+      </div>
+
+      {tab === "cash" && (ledgerMonth.length === 0 ? (
+        <div className="card empty"><h2>За этот месяц операций нет</h2><p>Здесь появятся все оплаты учеников и все расходы по порядку.</p></div>
+      ) : (
+        <div className="table-wrap">
+          <table>
+            <thead><tr><th>Дата</th><th>Операция</th><th className="r">Приход</th><th className="r">Расход</th><th>Способ</th><th className="r">Остаток</th></tr></thead>
+            <tbody>
+              <tr><td></td><td className="muted">Остаток на начало месяца</td><td></td><td></td><td></td><td className="r num"><b>{sign(opening)}</b></td></tr>
+              {ledgerMonth.map((x) => (
+                <tr key={x.key}>
+                  <td className="num">{day(x.date)}</td>
+                  <td><b>{x.title}</b>{x.sub && <div className="small muted">{x.sub}</div>}</td>
+                  <td className="r num" style={{ color: "var(--pass)" }}>{x.in ? "+" + money(x.amount) : ""}</td>
+                  <td className="r num" style={{ color: "var(--fail)" }}>{x.in ? "" : "−" + money(x.amount)}</td>
+                  <td><span className={"chip " + (x.method === "cash" ? "month" : "progress")}>{METHOD[x.method]}</span></td>
+                  <td className="r num"><b>{sign(x.after)}</b></td>
+                </tr>
+              ))}
+            </tbody>
+            <tfoot><tr><td colSpan={2}><b>Итого за месяц</b></td><td className="r num" style={{ color: "var(--pass)" }}><b>+{money(income)}</b></td><td className="r num" style={{ color: "var(--fail)" }}><b>−{money(spent)}</b></td><td></td><td className="r num"><b>{sign(opening + profit)}</b></td></tr></tfoot>
+          </table>
+        </div>
+      ))}
+
+      {tab === "report" && (report.length === 0 ? (
+        <div className="card empty"><h2>Пока нет данных</h2><p>Отчёт появится после первой оплаты или расхода.</p></div>
+      ) : (
+        <div className="table-wrap">
+          <table>
+            <thead><tr><th>Месяц</th><th className="r">Доходы</th><th className="r">Расходы</th><th className="r">Прибыль / убыток</th><th className="r">Остаток на конец месяца</th></tr></thead>
+            <tbody>
+              {report.map((r) => (
+                <tr key={r.m} style={{ cursor: "pointer" }} title="Открыть кассу за этот месяц" onClick={() => { setMonth(r.m); setTab("cash"); }}>
+                  <td><b>{monthLabel(r.m).replace(/^./, (c) => c.toUpperCase())}</b></td>
+                  <td className="r num" style={{ color: "var(--pass)" }}>{money(r.inc)}</td>
+                  <td className="r num" style={{ color: "var(--fail)" }}>{money(r.out)}</td>
+                  <td className="r num" style={{ color: r.profit >= 0 ? "var(--pass)" : "var(--fail)" }}><b>{sign(r.profit)}</b></td>
+                  <td className="r num"><b>{sign(r.end)}</b></td>
+                </tr>
+              ))}
+            </tbody>
+            <tfoot><tr><td><b>Всего</b></td><td className="r num"><b>{money(sumBy(payments))}</b></td><td className="r num"><b>{money(sumBy(expenses))}</b></td><td className="r num"><b>{sign(balance)}</b></td><td className="r num"><b>{sign(balance)}</b></td></tr></tfoot>
+          </table>
+        </div>
+      ))}
+
+      {tab === "list" && <>
 
       {byCat.length > 0 && (
         <div className="card pad" style={{ marginBottom: 16 }}>
@@ -148,6 +228,7 @@ export default function Expenses() {
           </table>
         </div>
       )}
+      </>}
 
       {edit && (
         <Modal title={edit.id ? "Изменить расход" : "Новый расход"} subtitle="Расход академии: аренда, зарплата, налоги и другое." onClose={() => setEdit(null)} onSubmit={save} error={error} busy={busy} submitText={edit.id ? "Сохранить" : "Записать расход"}>

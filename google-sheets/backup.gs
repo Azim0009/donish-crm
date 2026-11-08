@@ -26,6 +26,39 @@ const SHEETS = {
   'Учителя': ['teachers', [['ID', 'id'], ['Учитель', 'fullName'], ['Логин', 'login'], ['Телефон', 'phone'], ['Добавлен', 'createdAt', 'date']]],
 };
 
+// Касса: все приходы и расходы по дате, остаток после каждой операции (новые сверху)
+const LEDGER_COLS = [['Дата', 'date', 'date'], ['Операция', 'type'], ['Кто / за что', 'title'], ['Подробно', 'details'], ['Приход, сом.', 'inc', 'money'], ['Расход, сом.', 'out', 'money'], ['Способ', 'method'], ['Остаток, сом.', 'after', 'money']];
+// Отчёт: по месяцам (новые сверху)
+const REPORT_COLS = [['Месяц', 'month'], ['Доходы, сом.', 'inc', 'money'], ['Расходы, сом.', 'out', 'money'], ['Прибыль / убыток', 'profit', 'money'], ['Остаток на конец месяца', 'end', 'money']];
+const MONTHS_RU = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
+
+function ledger_(data) {
+  const rows = (data.payments || []).map(p => ({ date: p.paidAt, created: p.createdAt || '', isIn: true, type: 'Приход', title: p.studentName,
+      details: [p.groupName, p.month ? 'месяц курса ' + p.month : '', p.note].filter(x => x).join(' · '), amount: Number(p.amount), method: p.method }))
+    .concat((data.expenses || []).map(e => ({ date: e.spentAt, created: e.createdAt || '', isIn: false, type: 'Расход', title: e.category,
+      details: [e.teacher, e.note].filter(x => x).join(' · '), amount: Number(e.amount), method: e.method })));
+  rows.sort((a, b) => String(a.date).slice(0, 10).localeCompare(String(b.date).slice(0, 10)) ||
+    String(a.created).localeCompare(String(b.created)) || (a.isIn === b.isIn ? 0 : a.isIn ? -1 : 1));
+  let run = 0;
+  return rows.map(r => {
+    run += r.isIn ? r.amount : -r.amount;
+    return Object.assign(r, { inc: r.isIn ? r.amount : null, out: r.isIn ? null : r.amount, after: run, ym: String(r.date).slice(0, 7) });
+  });
+}
+
+function report_(ledger) {
+  const by = {};
+  ledger.forEach(r => {
+    const m = by[r.ym] || (by[r.ym] = { inc: 0, out: 0, end: 0 });
+    if (r.isIn) m.inc += r.amount; else m.out += r.amount;
+    m.end = r.after;
+  });
+  return Object.keys(by).sort().reverse().map(k => {
+    const [y, mo] = k.split('-').map(Number);
+    return { month: MONTHS_RU[mo - 1] + ' ' + y, inc: by[k].inc, out: by[k].out, profit: by[k].inc - by[k].out, end: by[k].end };
+  });
+}
+
 /** Меню в таблице */
 function onOpen() {
   SpreadsheetApp.getUi().createMenu('CRM Donish')
@@ -60,6 +93,10 @@ function backupNow() {
     const [field, cols] = SHEETS[name];
     writeSheet_(ss, name, cols, data[field] || []);
   });
+  // Касса и отчёт считаются из оплат и расходов (в CRM ничего не меняется)
+  const ledger = ledger_(data);
+  writeSheet_(ss, 'Касса', LEDGER_COLS, ledger.slice().reverse());
+  writeSheet_(ss, 'Отчёт по месяцам', REPORT_COLS, report_(ledger));
   log_(ss, 'OK', data);
 }
 
