@@ -9,6 +9,7 @@ import Students from "./pages/Students.jsx";
 import Dashboard from "./pages/Dashboard.jsx";
 import Settings from "./pages/Settings.jsx";
 import Finance from "./pages/Finance.jsx";
+import Expenses from "./pages/Expenses.jsx";
 
 function Private({ children, admin }) {
   const u = auth.user;
@@ -28,6 +29,7 @@ export default function App() {
       <Route path="/groups/:id" element={<Private><GroupPage /></Private>} />
       <Route path="/students" element={<Private><Students /></Private>} />
       <Route path="/settings" element={<Private><Settings /></Private>} />
+      <Route path="/expenses" element={<Private admin><Expenses /></Private>} />
       <Route path="/finance" element={<Private admin><Finance /></Private>} />
       <Route path="/teachers" element={<Private admin><Teachers /></Private>} />
       <Route path="*" element={<Navigate to="/" replace />} />

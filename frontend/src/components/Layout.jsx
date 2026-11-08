@@ -32,6 +32,7 @@ export default function Layout({ children }) {
           <NavLink to="/students"><Icon name="users" /> Ученики</NavLink>
           {u?.role === "admin" && <NavLink to="/teachers"><Icon name="user" /> Учителя</NavLink>}
           {u?.role === "admin" && <NavLink to="/finance"><Icon name="wallet" /> Финансы</NavLink>}
+          {u?.role === "admin" && <NavLink to="/expenses"><Icon name="cash" /> Расходы</NavLink>}
         </nav>
         <div className="side-foot">
           <div className="me"><b>{u?.fullName}</b>{u?.role === "admin" ? "Суперадмин" : "Учитель"}</div>

@@ -4,7 +4,6 @@ import { api } from "../api.js";
 import Modal, { Field } from "../components/Modal.jsx";
 import Icon from "../components/Icon.jsx";
 import { initials } from "../scoring.js";
-import Expenses from "./Expenses.jsx";
 
 const METHOD = { cash: "Наличные", transfer: "Перевод" };
 const money = (n) => `${Number(n || 0).toLocaleString("ru-RU", { maximumFractionDigits: 2 })} сом.`;
@@ -17,7 +16,6 @@ export default function Finance() {
   const [groups, setGroups] = useState([]);
   const [payments, setPayments] = useState([]);
   const [price, setPrice] = useState(0);
-  const [expenses, setExpenses] = useState([]);
   const [tab, setTab] = useState("status");
   const [q, setQ] = useState("");
   const [gf, setGf] = useState("");
@@ -27,8 +25,8 @@ export default function Finance() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
-  const load = () => Promise.all([api("/api/students"), api("/api/groups"), api("/api/finance/payments"), api("/api/finance/settings"), api("/api/finance/expenses").catch(() => [])])
-    .then(([s, g, p, st, ex]) => { setStudents(s); setGroups(g); setPayments(p); setPrice(Number(st.monthPrice) || 0); setExpenses(ex); })
+  const load = () => Promise.all([api("/api/students"), api("/api/groups"), api("/api/finance/payments"), api("/api/finance/settings")])
+    .then(([s, g, p, st]) => { setStudents(s); setGroups(g); setPayments(p); setPrice(Number(st.monthPrice) || 0); })
     .catch((e) => setError(e.message));
   useEffect(() => { load(); }, []);
 
@@ -113,14 +111,12 @@ export default function Finance() {
       <div className="tabs">
         <button className={tab === "status" ? "on" : ""} onClick={() => setTab("status")}>Кто оплатил</button>
         <button className={tab === "history" ? "on" : ""} onClick={() => setTab("history")}>История оплат · <span className="num">{payments.length}</span></button>
-        <button className={tab === "expenses" ? "on" : ""} onClick={() => setTab("expenses")}>Расходы · <span className="num">{expenses.length}</span></button>
       </div>
-      {tab === "expenses" && <Expenses expenses={expenses} payments={payments} reload={load} />}
-      {tab !== "expenses" && <div className="filters">
+      <div className="filters">
         <label className="search"><Icon name="search" /><input id="fin-q" placeholder="Поиск ученика" value={q} onChange={(e) => setQ(e.target.value)} /></label>
         <div className="select-wrap"><select id="fin-g" value={gf} onChange={(e) => setGf(e.target.value)}><option value="">Все группы</option>{groups.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}</select><Icon name="chevron" className="sel-chev" /></div>
         {tab === "status" && <div className="select-wrap"><select id="fin-s" value={sf} onChange={(e) => setSf(e.target.value)}><option value="">Все статусы</option><option value="paid">Оплачено</option><option value="part">Частично</option><option value="none">Не оплачено</option></select><Icon name="chevron" className="sel-chev" /></div>}
-      </div>}
+      </div>
 
       {students && students.length === 0 && <div className="card empty"><h2>Учеников пока нет</h2><p>Добавьте учеников в группы, потом принимайте оплаты.</p></div>}
 

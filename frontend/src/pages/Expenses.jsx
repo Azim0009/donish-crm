@@ -27,8 +27,10 @@ const today = () => { const d = new Date(); return `${d.getFullYear()}-${String(
 const ym = (iso) => { const d = new Date(iso); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`; };
 const monthLabel = (key) => { const [y, m] = key.split("-").map(Number); return new Date(y, m - 1, 1).toLocaleDateString("ru-RU", { month: "long", year: "numeric" }); };
 
-// expenses / reload приходят из Finance, чтобы итоги «Доходы − Расходы» считались там же
-export default function Expenses({ expenses, payments, reload }) {
+// Отдельный раздел «Расходы» (только суперадмин)
+export default function Expenses() {
+  const [expenses, setExpenses] = useState(null);
+  const [payments, setPayments] = useState([]);
   const [teachers, setTeachers] = useState([]);
   const [month, setMonth] = useState(() => ym(new Date().toISOString()));
   const [cf, setCf] = useState("");
@@ -36,13 +38,17 @@ export default function Expenses({ expenses, payments, reload }) {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
-  useEffect(() => { api("/api/teachers").then(setTeachers).catch(() => {}); }, []);
+  const reload = () => Promise.all([api("/api/finance/expenses"), api("/api/finance/payments")])
+    .then(([ex, p]) => { setExpenses(ex); setPayments(p); }).catch((e) => setError(e.message));
+  useEffect(() => { reload(); api("/api/teachers").then(setTeachers).catch(() => {}); }, []);
 
   const months = useMemo(() => {
+    if (!expenses) return [];
     const set = new Set([ym(new Date().toISOString()), ...expenses.map((e) => ym(e.spentAt)), ...payments.map((p) => ym(p.paidAt))]);
     return [...set].sort().reverse();
   }, [expenses, payments]);
 
+  if (!expenses) return <div className="page-head"><div><div className="eyebrow">Суперадмин</div><h1>Расходы</h1>{error ? <div className="error">{error}</div> : <p>Загрузка…</p>}</div></div>;
   const inMonth = expenses.filter((e) => ym(e.spentAt) === month);
   const shown = inMonth.filter((e) => !cf || e.category === cf);
   const income = payments.filter((p) => ym(p.paidAt) === month).reduce((t, p) => t + Number(p.amount), 0);
@@ -77,6 +83,10 @@ export default function Expenses({ expenses, payments, reload }) {
 
   return (
     <>
+      <div className="page-head">
+        <div><div className="eyebrow">Суперадмин</div><h1>Расходы</h1><p>Расходы академии: аренда, зарплата, налоги и другое.</p></div>
+        <button className="btn primary" onClick={openNew}><Icon name="plus" /> Добавить расход</button>
+      </div>
       <div className="row" style={{ justifyContent: "space-between", marginBottom: 14 }}>
         <div className="filters" style={{ margin: 0 }}>
           <div className="select-wrap"><select id="ex-month" value={month} onChange={(e) => setMonth(e.target.value)}>
@@ -87,7 +97,6 @@ export default function Expenses({ expenses, payments, reload }) {
             {EXPENSE_CATEGORIES.map(([k, n]) => <option key={k} value={k}>{n}</option>)}
           </select><Icon name="chevron" className="sel-chev" /></div>
         </div>
-        <button className="btn primary" onClick={openNew}><Icon name="plus" /> Добавить расход</button>
       </div>
       {error && !edit && <div className="error" style={{ marginBottom: 12 }}>{error}</div>}
 
